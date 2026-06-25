@@ -60,6 +60,18 @@
         .hint.hidden { opacity: 0; }
         @keyframes pulse { 0%,100%{ transform: scale(1); } 50%{ transform: scale(1.05); } }
         .flag-container.pulse { animation: pulse 0.4s; }
+
+        @media (max-width: 600px) {
+            .slider { margin-top: 20px; width: 96%; }
+            .slider h1 { font-size: 1.3rem; margin-bottom: 12px; }
+            .main-area { gap: 8px; }
+            .nav-btn { width: 44px; height: 44px; font-size: 1.2rem; }
+            .flag-container { padding: 16px; border-radius: 12px; }
+            .flag-container img { height: auto; }
+            .country-name { font-size: 1.3rem; min-height: 36px; margin-top: 12px; }
+            .hint { font-size: 1rem; }
+            .counter { font-size: 0.8rem; }
+        }
     </style>
 </head>
 <body>
