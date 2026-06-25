@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cuộc thi tìm hiểu cờ Các Nước</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            display: flex; justify-content: center; align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            color: #fff;
+        }
+        .slider { text-align: center; max-width: 720px; width: 92%; margin-top: 40px; }
+        .slider h1 {
+            margin-bottom: 20px; font-size: 2rem;
+            background: linear-gradient(90deg, #f7971e, #ffd200);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .counter { font-size: 0.9rem; color: #aaa; margin-bottom: 10px; }
+        .progress { width: 100%; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; margin-bottom: 20px; }
+        .progress-bar { height: 100%; background: linear-gradient(90deg, #667eea, #764ba2); border-radius: 2px; transition: width 0.3s; }
+        .main-area { display: flex; align-items: center; gap: 16px; }
+        .nav-btn {
+            padding: 16px 20px; font-size: 1.6rem; border: none; border-radius: 50%;
+            cursor: pointer; color: #fff; width: 60px; height: 60px;
+            display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+            background: linear-gradient(135deg, #f7971e, #ffd200);
+            box-shadow: 0 4px 15px rgba(247,151,30,0.3);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .nav-btn:hover { transform: scale(1.15); box-shadow: 0 8px 25px rgba(247,151,30,0.5); }
+        .nav-btn:disabled { background: #333; cursor: not-allowed; transform: none; box-shadow: none; opacity: 0.4; }
+        .flag-container {
+            flex: 1;
+            background: rgba(255,255,255,0.05); backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 16px; padding: 24px;
+            cursor: pointer; transition: transform 0.2s, box-shadow 0.3s;
+        }
+        .flag-container:hover { transform: scale(1.02); box-shadow: 0 8px 32px rgba(0,0,0,0.3); }
+        .flag-container img {
+            width: 580px; height: 387px; max-width: 100%; object-fit: contain;
+            border-radius: 8px; box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+        }
+        .country-name {
+            margin-top: 20px; font-size: 1.8rem; font-weight: bold;
+            min-height: 50px; opacity: 0; transform: scale(0.5) translateY(20px);
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .country-name.revealed {
+            opacity: 1; transform: scale(1) translateY(0);
+            background: linear-gradient(90deg, #f7971e, #ffd200);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 40px rgba(247,151,30,0.3);
+        }
+        .hint { font-size: 1.1rem; color: #888; margin-top: 4px; transition: opacity 0.3s; }
+        .hint.hidden { opacity: 0; }
+        @keyframes pulse { 0%,100%{ transform: scale(1); } 50%{ transform: scale(1.05); } }
+        .flag-container.pulse { animation: pulse 0.4s; }
+    </style>
+</head>
+<body>
+<div class="slider">
+    <h1>🌍 Giải đố cờ các nước trên thế giới</h1>
+    <div class="counter" id="counter"></div>
+    <div class="progress"><div class="progress-bar" id="progressBar"></div></div>
+    <div class="main-area">
+        <button class="nav-btn" id="prevBtn" onclick="prev()">←</button>
+        <div class="flag-container" id="flagContainer" onclick="revealName()">
+            <img id="flagImg" src="" alt="Flag">
+            <div class="country-name" id="countryName"></div>
+            <p class="hint" id="hint">👆 Xem đáp án</p>
+        </div>
+        <button class="nav-btn" id="nextBtn" onclick="next()">→</button>
+    </div>
+</div>
+<script>
+const countries = [
+    {code:"ad",name:"Andorra"},{code:"ae",name:"Các Tiểu vương quốc Ả Rập Thống nhất"},{code:"af",name:"Afghanistan"},{code:"ag",name:"Antigua và Barbuda"},
+    {code:"al",name:"Albania"},{code:"am",name:"Armenia"},{code:"ao",name:"Angola"},{code:"ar",name:"Argentina"},
+    {code:"at",name:"Áo"},{code:"au",name:"Úc"},{code:"az",name:"Azerbaijan"},{code:"ba",name:"Bosnia và Herzegovina"},
+    {code:"bb",name:"Barbados"},{code:"bd",name:"Bangladesh"},{code:"be",name:"Bỉ"},{code:"bf",name:"Burkina Faso"},
+    {code:"bg",name:"Bulgaria"},{code:"bh",name:"Bahrain"},{code:"bi",name:"Burundi"},{code:"bj",name:"Benin"},
+    {code:"bn",name:"Brunei"},{code:"bo",name:"Bolivia"},{code:"br",name:"Brazil"},{code:"bs",name:"Bahamas"},
+    {code:"bt",name:"Bhutan"},{code:"bw",name:"Botswana"},{code:"by",name:"Belarus"},{code:"bz",name:"Belize"},
+    {code:"ca",name:"Canada"},{code:"cd",name:"Cộng hòa Dân chủ Congo"},{code:"cf",name:"Cộng hòa Trung Phi"},{code:"cg",name:"Congo"},
+    {code:"ch",name:"Thụy Sĩ"},{code:"ci",name:"Bờ Biển Ngà"},{code:"cl",name:"Chile"},{code:"cm",name:"Cameroon"},
+    {code:"cn",name:"Trung Quốc"},{code:"co",name:"Colombia"},{code:"cr",name:"Costa Rica"},{code:"cu",name:"Cuba"},
+    {code:"cv",name:"Cabo Verde"},{code:"cy",name:"Síp"},{code:"cz",name:"Cộng hòa Séc"},{code:"de",name:"Đức"},
+    {code:"dj",name:"Djibouti"},{code:"dk",name:"Đan Mạch"},{code:"dm",name:"Dominica"},{code:"do",name:"Cộng hòa Dominica"},
+    {code:"dz",name:"Algeria"},{code:"ec",name:"Ecuador"},{code:"ee",name:"Estonia"},{code:"eg",name:"Ai Cập"},
+    {code:"er",name:"Eritrea"},{code:"es",name:"Tây Ban Nha"},{code:"et",name:"Ethiopia"},{code:"fi",name:"Phần Lan"},
+    {code:"fj",name:"Fiji"},{code:"fm",name:"Micronesia"},{code:"fr",name:"Pháp"},{code:"ga",name:"Gabon"},
+    {code:"gb",name:"Vương quốc Anh"},{code:"gd",name:"Grenada"},{code:"ge",name:"Gruzia"},{code:"gh",name:"Ghana"},
+    {code:"gm",name:"Gambia"},{code:"gn",name:"Guinea"},{code:"gq",name:"Guinea Xích Đạo"},{code:"gr",name:"Hy Lạp"},
+    {code:"gt",name:"Guatemala"},{code:"gw",name:"Guinea-Bissau"},{code:"gy",name:"Guyana"},{code:"hn",name:"Honduras"},
+    {code:"hr",name:"Croatia"},{code:"ht",name:"Haiti"},{code:"hu",name:"Hungary"},{code:"id",name:"Indonesia"},
+    {code:"ie",name:"Ireland"},{code:"il",name:"Israel"},{code:"in",name:"Ấn Độ"},{code:"iq",name:"Iraq"},
+    {code:"ir",name:"Iran"},{code:"is",name:"Iceland"},{code:"it",name:"Ý"},{code:"jm",name:"Jamaica"},
+    {code:"jo",name:"Jordan"},{code:"jp",name:"Nhật Bản"},{code:"ke",name:"Kenya"},{code:"kg",name:"Kyrgyzstan"},
+    {code:"kh",name:"Campuchia"},{code:"ki",name:"Kiribati"},{code:"km",name:"Comoros"},{code:"kn",name:"Saint Kitts và Nevis"},
+    {code:"kp",name:"Triều Tiên"},{code:"kr",name:"Hàn Quốc"},{code:"kw",name:"Kuwait"},{code:"kz",name:"Kazakhstan"},
+    {code:"la",name:"Lào"},{code:"lb",name:"Lebanon"},{code:"lc",name:"Saint Lucia"},{code:"li",name:"Liechtenstein"},
+    {code:"lk",name:"Sri Lanka"},{code:"lr",name:"Liberia"},{code:"ls",name:"Lesotho"},{code:"lt",name:"Lithuania"},
+    {code:"lu",name:"Luxembourg"},{code:"lv",name:"Latvia"},{code:"ly",name:"Libya"},{code:"ma",name:"Maroc"},
+    {code:"mc",name:"Monaco"},{code:"md",name:"Moldova"},{code:"me",name:"Montenegro"},{code:"mg",name:"Madagascar"},
+    {code:"mh",name:"Quần đảo Marshall"},{code:"mk",name:"Bắc Macedonia"},{code:"ml",name:"Mali"},{code:"mm",name:"Myanmar"},
+    {code:"mn",name:"Mông Cổ"},{code:"mr",name:"Mauritania"},{code:"mt",name:"Malta"},{code:"mu",name:"Mauritius"},
+    {code:"mv",name:"Maldives"},{code:"mw",name:"Malawi"},{code:"mx",name:"Mexico"},{code:"my",name:"Malaysia"},
+    {code:"mz",name:"Mozambique"},{code:"na",name:"Namibia"},{code:"ne",name:"Niger"},{code:"ng",name:"Nigeria"},
+    {code:"ni",name:"Nicaragua"},{code:"nl",name:"Hà Lan"},{code:"no",name:"Na Uy"},{code:"np",name:"Nepal"},
+    {code:"nr",name:"Nauru"},{code:"nz",name:"New Zealand"},{code:"om",name:"Oman"},{code:"pa",name:"Panama"},
+    {code:"pe",name:"Peru"},{code:"pg",name:"Papua New Guinea"},{code:"ph",name:"Philippines"},{code:"pk",name:"Pakistan"},
+    {code:"pl",name:"Ba Lan"},{code:"pt",name:"Bồ Đào Nha"},{code:"pw",name:"Palau"},{code:"py",name:"Paraguay"},
+    {code:"qa",name:"Qatar"},{code:"ro",name:"Romania"},{code:"rs",name:"Serbia"},{code:"ru",name:"Nga"},
+    {code:"rw",name:"Rwanda"},{code:"sa",name:"Ả Rập Xê Út"},{code:"sb",name:"Quần đảo Solomon"},{code:"sc",name:"Seychelles"},
+    {code:"sd",name:"Sudan"},{code:"se",name:"Thụy Điển"},{code:"sg",name:"Singapore"},{code:"si",name:"Slovenia"},
+    {code:"sk",name:"Slovakia"},{code:"sl",name:"Sierra Leone"},{code:"sm",name:"San Marino"},{code:"sn",name:"Senegal"},
+    {code:"so",name:"Somalia"},{code:"sr",name:"Suriname"},{code:"ss",name:"Nam Sudan"},{code:"st",name:"São Tomé và Príncipe"},
+    {code:"sv",name:"El Salvador"},{code:"sy",name:"Syria"},{code:"sz",name:"Eswatini"},{code:"td",name:"Chad"},
+    {code:"tg",name:"Togo"},{code:"th",name:"Thái Lan"},{code:"tj",name:"Tajikistan"},{code:"tl",name:"Đông Timor"},
+    {code:"tm",name:"Turkmenistan"},{code:"tn",name:"Tunisia"},{code:"to",name:"Tonga"},{code:"tr",name:"Thổ Nhĩ Kỳ"},
+    {code:"tt",name:"Trinidad và Tobago"},{code:"tv",name:"Tuvalu"},{code:"tw",name:"Đài Loan"},{code:"tz",name:"Tanzania"},
+    {code:"ua",name:"Ukraine"},{code:"ug",name:"Uganda"},{code:"us",name:"Hoa Kỳ"},{code:"uy",name:"Uruguay"},
+    {code:"uz",name:"Uzbekistan"},{code:"va",name:"Thành Vatican"},{code:"vc",name:"Saint Vincent và Grenadines"},
+    {code:"ve",name:"Venezuela"},{code:"vn",name:"Việt Nam"},{code:"vu",name:"Vanuatu"},{code:"ws",name:"Samoa"},
+    {code:"ye",name:"Yemen"},{code:"za",name:"Nam Phi"},{code:"zm",name:"Zambia"},{code:"zw",name:"Zimbabwe"}
+];
+
+// Random order mỗi lần load
+for (let i = countries.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [countries[i], countries[j]] = [countries[j], countries[i]];
+}
+
+let current = 0, revealed = false;
+
+function show() {
+    const c = countries[current];
+    document.getElementById('flagImg').src = `https://flagpedia.net/data/flags/w580/${c.code}.png`;
+    const name = document.getElementById('countryName');
+    name.textContent = '';
+    name.classList.remove('revealed');
+    document.getElementById('hint').classList.remove('hidden');
+    document.getElementById('counter').textContent = `${current + 1} / ${countries.length}`;
+    document.getElementById('prevBtn').disabled = current === 0;
+    document.getElementById('nextBtn').disabled = current === countries.length - 1;
+    document.getElementById('progressBar').style.width = `${((current + 1) / countries.length) * 100}%`;
+    revealed = false;
+}
+
+function revealName() {
+    if (!revealed) {
+        const name = document.getElementById('countryName');
+        name.textContent = countries[current].name;
+        name.classList.add('revealed');
+        document.getElementById('hint').classList.add('hidden');
+        document.getElementById('flagContainer').classList.add('pulse');
+        setTimeout(() => document.getElementById('flagContainer').classList.remove('pulse'), 400);
+        revealed = true;
+    }
+}
+
+function next() { if (current < countries.length - 1) { current++; show(); } }
+function prev() { if (current > 0) { current--; show(); } }
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'ArrowRight') next();
+    else if (e.key === 'ArrowLeft') prev();
+    else if (e.key === ' ') { e.preventDefault(); revealName(); }
+});
+
+show();
+</script>
+</body>
+</html>
